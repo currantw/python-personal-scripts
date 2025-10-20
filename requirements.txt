@@ -1,1 +1,3 @@
 # Add your project dependencies here
+pandas
+openpyxl
