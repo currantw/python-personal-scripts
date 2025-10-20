@@ -22,11 +22,8 @@ jobs:
         npm install -g markdownlint-cli
         make install-dev
 
-    - name: Run code quality checks
-      run: make check-all
-
-    - name: Test with pytest
-      run: make test-cov
+    - name: Run all checks and tests
+      run: make all
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3

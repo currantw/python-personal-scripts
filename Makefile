@@ -1,4 +1,4 @@
-.PHONY: help install install-dev check-format fix-format check-lint fix-lint check-type check-all fix-all test test-cov clean pre-commit
+.PHONY: help install install-dev check-format fix-format check-lint fix-lint check-type check-all fix-all test test-cov clean all pre-commit
 
 help:  ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -52,8 +52,13 @@ clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
 	find . -type d -name "*.egg-info" -exec rm -rf {} +
-	rm -rf .coverage/ .pytest_cache/ .mypy_cache/
+	rm -rf .coverage/ .pytest_cache/ .mypy_cache/ .ruff_cache/
 
 # Run pre-commit hooks
 pre-commit:
 	pre-commit run --all-files
+
+# Run all checks and tests with coverage
+all:
+	make check-all
+	make test-cov
