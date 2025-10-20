@@ -15,32 +15,22 @@ Usage:
 import argparse
 import re
 import sys
-from typing import Iterable
+
 
 import pandas as pd
 
 
-GROCERY_KEYWORDS: Iterable[str] = (
-    # Common grocery chains & patterns (extend as needed)
-    "SAVE ON",
-    "SAVE-ON",
-    "SAVEON",
-    "WHOLE FOODS",
-    "WHOLEFOODS",
-    "SAFEWAY",
-    "NO FRILLS",
-    "NOFRILLS",
-    "REAL CANADIAN SUPERSTORE",
-    "SUPERSTORE",
-    "THRIFTY FOODS",
-    "THRIFTY",
-    "WALMART SUPERCENTER",
-    "WALMART SUPERCENTRE",
-    "COSTCO WHOLESALE",
-    "CHOICES MARKETS",
-    "URBAN FARE",
-    "IGA",
-)
+# Regex patterns for grocery stores
+GROCERY_PATTERNS = [
+    re.compile(r"\bSAVE[-\s]?ON\b", re.IGNORECASE),
+    re.compile(r"\bWHOLE[-\s]?FOODS\b", re.IGNORECASE),
+    re.compile(r"\bSAFEWAY\b", re.IGNORECASE),
+    re.compile(r"\bNO[-\s]?FRILLS\b", re.IGNORECASE),
+    re.compile(r"\bSUPERSTORE\b", re.IGNORECASE),
+    re.compile(r"\bTHRIFTY\b", re.IGNORECASE),
+    re.compile(r"\bWALMART\b", re.IGNORECASE),
+    re.compile(r"\b7\sELEVEN\b", re.IGNORECASE),
+]
 
 TAYLOR_NAME = "TAYLOR"
 ANVITA_NAME = "ANVITA"
@@ -61,11 +51,10 @@ def clean_description(desc: str) -> str:
 
 
 def is_grocery(merchant: str) -> bool:
-    """Heuristic: check if the cleaned description contains a known grocery keyword."""
+    """Check if the description matches any grocery store pattern."""
     if not isinstance(merchant, str):
         return False
-    u = merchant.upper()
-    return any(k in u for k in GROCERY_KEYWORDS)
+    return any(pattern.search(merchant) for pattern in GROCERY_PATTERNS)
 
 
 def main():
