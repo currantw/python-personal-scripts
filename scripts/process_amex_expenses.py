@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
-"""
+#!/usr/bin/env python
+"""Script for processing American Express activity CSV into cleaned Excel file.
+
 Process American Express activity CSV into a cleaned Excel file with columns:
 - Date (transaction date)
 - Source ("American Express Cobalt")
@@ -8,9 +9,17 @@ Process American Express activity CSV into a cleaned Excel file with columns:
 - Anvita Paid (amount if Card Member is Anvita Akkur; else 0)
 - Taylor Portion (0.6 if groceries; else blank)
 
-Usage:
-    python process_amex_expenses.py --input activity.csv \\
-        --output amex_expenses_full.xlsx
+Usage Examples:
+    # Basic usage
+    python -m scripts.process_amex_expenses --input activity.csv --output expenses.xlsx
+
+    # Show help
+    python -m scripts.process_amex_expenses --help
+
+Requirements:
+    - pandas library for CSV/Excel processing
+    - Input CSV must have columns: Date, Description, Card Member, Amount
+    - Positive amounts are treated as expenses, negative as payments/credits
 """
 
 import argparse
@@ -58,11 +67,26 @@ def is_grocery(merchant: str) -> bool:
     return any(pattern.search(merchant) for pattern in GROCERY_PATTERNS)
 
 
+def paid_for(row: pd.Series[Any], who: str) -> float:
+    """Calculate amount paid by specific person based on Card Member field."""
+    cm = str(row.get("Card Member", "")).upper()
+    return float(row["Amount"]) if who in cm else 0.0
+
+
 def main() -> None:
-    p = argparse.ArgumentParser()
-    p.add_argument("--input", "-i", required=True, help="Path to Amex activity CSV")
-    p.add_argument("--output", "-o", required=True, help="Path to output Excel file")
-    args = p.parse_args()
+    """Main function for process_amex_expenses."""
+    parser = argparse.ArgumentParser(
+        description="Process American Express activity CSV into cleaned Excel file"
+    )
+
+    parser.add_argument(
+        "--input", "-i", type=str, required=True, help="Path to Amex activity CSV"
+    )
+    parser.add_argument(
+        "--output", "-o", type=str, required=True, help="Path to output Excel file"
+    )
+
+    args = parser.parse_args()
 
     # Read CSV (expects columns like: Date, Date Processed, Description,
     # Card Member, Account #, Amount)
@@ -72,8 +96,8 @@ def main() -> None:
         print(f"Error reading input CSV: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Keep only expenses (positive amounts). Payments/credits are negative in
-    # Amex export.
+    # Keep only expenses (positive amounts).
+    # Payments/credits are negative in Amex export.
     if "Amount" not in df.columns:
         print("Input CSV missing 'Amount' column.", file=sys.stderr)
         sys.exit(1)
@@ -85,26 +109,24 @@ def main() -> None:
             print(f"Input CSV missing '{col}' column.", file=sys.stderr)
             sys.exit(1)
 
-    # Transform
+    # Transform data
     expenses["Expense"] = expenses["Description"].apply(clean_description)
     expenses["Source"] = "American Express Cobalt"
-
-    def paid_for(row: pd.Series[Any], who: str) -> float:
-        cm = str(row.get("Card Member", "")).upper()
-        return float(row["Amount"]) if who in cm else 0.0
-
     expenses["Taylor Paid"] = expenses.apply(lambda r: paid_for(r, TAYLOR_NAME), axis=1)
     expenses["Anvita Paid"] = expenses.apply(lambda r: paid_for(r, ANVITA_NAME), axis=1)
     expenses["Taylor Portion"] = expenses["Expense"].apply(
         lambda x: 0.6 if is_grocery(x) else ""
     )
 
+    # Select output columns
     out = expenses[
         ["Date", "Source", "Expense", "Taylor Paid", "Anvita Paid", "Taylor Portion"]
     ].copy()
 
+    # Write Excel file
     try:
         out.to_excel(args.output, index=False)
+        print(f"Successfully processed {len(out)} expenses to {args.output}")
     except Exception as e:
         print(f"Error writing Excel: {e}", file=sys.stderr)
         sys.exit(1)
