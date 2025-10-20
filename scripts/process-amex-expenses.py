@@ -9,16 +9,16 @@ Process American Express activity CSV into a cleaned Excel file with columns:
 - Taylor Portion (0.6 if groceries; else blank)
 
 Usage:
-    python process_amex_expenses.py --input activity.csv --output amex_expenses_full.xlsx
+    python process_amex_expenses.py --input activity.csv \\
+        --output amex_expenses_full.xlsx
 """
 
 import argparse
 import re
 import sys
-
+from typing import Any
 
 import pandas as pd
-
 
 # Regex patterns for grocery stores
 GROCERY_PATTERNS = [
@@ -37,7 +37,8 @@ ANVITA_NAME = "ANVITA"
 
 
 def clean_description(desc: str) -> str:
-    """Simplify merchant description: remove store numbers, URLs, long numbers/phones, collapse spaces."""
+    """Simplify merchant description: remove store numbers, URLs, long numbers/phones,
+    collapse spaces."""
     if not isinstance(desc, str):
         return ""
 
@@ -57,20 +58,22 @@ def is_grocery(merchant: str) -> bool:
     return any(pattern.search(merchant) for pattern in GROCERY_PATTERNS)
 
 
-def main():
+def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--input", "-i", required=True, help="Path to Amex activity CSV")
     p.add_argument("--output", "-o", required=True, help="Path to output Excel file")
     args = p.parse_args()
 
-    # Read CSV (expects columns like: Date, Date Processed, Description, Card Member, Account #, Amount)
+    # Read CSV (expects columns like: Date, Date Processed, Description,
+    # Card Member, Account #, Amount)
     try:
         df = pd.read_csv(args.input)
     except Exception as e:
         print(f"Error reading input CSV: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Keep only expenses (positive amounts). Payments/credits are negative in Amex export.
+    # Keep only expenses (positive amounts). Payments/credits are negative in
+    # Amex export.
     if "Amount" not in df.columns:
         print("Input CSV missing 'Amount' column.", file=sys.stderr)
         sys.exit(1)
@@ -86,13 +89,15 @@ def main():
     expenses["Expense"] = expenses["Description"].apply(clean_description)
     expenses["Source"] = "American Express Cobalt"
 
-    def paid_for(row, who: str) -> float:
+    def paid_for(row: pd.Series[Any], who: str) -> float:
         cm = str(row.get("Card Member", "")).upper()
         return float(row["Amount"]) if who in cm else 0.0
 
     expenses["Taylor Paid"] = expenses.apply(lambda r: paid_for(r, TAYLOR_NAME), axis=1)
     expenses["Anvita Paid"] = expenses.apply(lambda r: paid_for(r, ANVITA_NAME), axis=1)
-    expenses["Taylor Portion"] = expenses["Expense"].apply(lambda x: 0.6 if is_grocery(x) else "")
+    expenses["Taylor Portion"] = expenses["Expense"].apply(
+        lambda x: 0.6 if is_grocery(x) else ""
+    )
 
     out = expenses[
         ["Date", "Source", "Expense", "Taylor Paid", "Anvita Paid", "Taylor Portion"]
