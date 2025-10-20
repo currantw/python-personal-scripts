@@ -1,6 +1,6 @@
 # Python Personal Scripts
 
-Personal Python scripts and utilities.
+A collection of scripts for personal tasks and automations.
 
 ## Setup
 
@@ -20,6 +20,6 @@ make test-cov
 
 ## Structure
 
-- `lib/` - Shared library modules (tested with 100% coverage)
-- `scripts/` - Executable scripts (not tested)
-- `tests/` - Test files for lib/ modules
+- `lib/` - Shared library modules
+- `scripts/` - Executable scripts
+- `tests/` - Test files
