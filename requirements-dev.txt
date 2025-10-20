@@ -9,6 +9,3 @@ pytest-cov>=4.0.0
 
 # Type stubs
 pandas-stubs>=2.0.0
-
-# Markdown linting
-markdownlint-cli>=0.37.0
