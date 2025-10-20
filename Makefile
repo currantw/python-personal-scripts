@@ -18,6 +18,7 @@ check-format:
 
 check-lint:
 	ruff check .
+	markdownlint .
 
 check-type:
 	mypy --strict .
@@ -33,6 +34,7 @@ fix-format:
 
 fix-lint:
 	ruff check --fix .
+	markdownlint --fix .
 
 fix-all:
 	make fix-format
